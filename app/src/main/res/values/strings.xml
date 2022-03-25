@@ -4,4 +4,11 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="description_open_album">OPEN ALBUM</string>
     <string name="btn_main_text">GO TO ALBUM OPEN</string>
+    <string name="title_photos">Photos</string>
+    <string name="save_image">save_image</string>
+    <string name="title_doodle">DOODLE</string>
+    <string name="doodle_close">닫기</string>
+    <string name="download">다운로드</string>
+    <string name="album_image">알림 이미지</string>
+
 </resources>
