@@ -147,8 +147,8 @@ class ShowImageActivity : AppCompatActivity() {
     private fun setRecyclerView() {
         adapterGridAlbum = AdapterGridAlbum()
         binding.rvRandomRectangle.adapter = adapterGridAlbum
+        binding.rvRandomRectangle.addItemDecoration(RecyclerDecoration(10, 0, 0, 20))
         binding.rvRandomRectangle.layoutManager = GridLayoutManager(this, 4)
-        binding.rvRandomRectangle.addItemDecoration(RecyclerDecoration(30, 50, 0, 20))
 
         adapterShowImage = AdapterShowImage()
         binding.rvShowImage.adapter = adapterShowImage
