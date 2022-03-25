@@ -138,10 +138,6 @@ class ShowImageViewModel: ViewModel() {
 
     }
 
-    fun scanMedia(file: File){
-        val intent = Intent(Intent.)
-    }
-
     fun scanMedia(context: Context, file: File) {
         val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
         intent.data = Uri.fromFile(file)
