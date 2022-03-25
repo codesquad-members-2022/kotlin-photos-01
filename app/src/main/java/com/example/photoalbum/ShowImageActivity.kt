@@ -1,12 +1,15 @@
 package com.example.photoalbum
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
 import android.text.TextUtils
@@ -19,6 +22,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.graphics.scale
 import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.GridLayoutManager
+import com.bumptech.glide.load.engine.GlideException
 import com.example.photoalbum.adapter.AdapterDoodle
 import com.example.photoalbum.adapter.AdapterGridAlbum
 import com.example.photoalbum.adapter.AdapterShowImage
@@ -30,6 +34,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+
 
 class ShowImageActivity : AppCompatActivity() {
 
@@ -110,13 +115,7 @@ class ShowImageActivity : AppCompatActivity() {
             when (menu.itemId) {
                 R.id.navi_download -> {
                     val context = this
-                    CoroutineScope(Job() + Dispatchers.Default).launch {
-                        val loadImageList = viewModel.selectImageLoad(context)
-                        loadImageList.forEach { image ->
-                            val saveState = viewModel.saveImage(image)
-                            saveMessage(saveState)
-                        }
-                    }
+                    loadAndSave(context)
                     true
                 }
                 else -> false
@@ -124,10 +123,25 @@ class ShowImageActivity : AppCompatActivity() {
         }
     }
 
-    private fun saveMessage(save: Boolean) = when(save) {
-        true -> Toast.makeText(this,"저장이 완료되었습니다!",Toast.LENGTH_SHORT).show()
-        false -> Toast.makeText(this,"저장이 실패하였습니다!",Toast.LENGTH_SHORT).show()
-    }
+    private fun loadAndSave(context: Context) =
+        CoroutineScope(Job() + Dispatchers.Default).launch {
+            kotlin.runCatching {
+                val loadImageList = viewModel.selectImageLoad(context) ?: throw GlideException("stub")
+                loadImageList.forEach { image ->
+                    val saveState = viewModel.saveImage(image)
+                }
+            }.onSuccess {
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed(Runnable {
+                    Toast.makeText(context, "저장이 완료되었습니다!", Toast.LENGTH_SHORT).show()
+                }, 0)
+            }.onFailure {
+                val handler = Handler(Looper.getMainLooper())
+                handler.postDelayed(Runnable {
+                    Toast.makeText(context, "${it.message}저장이 실패하였습니다!", Toast.LENGTH_SHORT).show()
+                }, 0)
+            }
+        }
 
     private fun setGoToAlbumOpenBtn() {
         binding.btnGoToAlbumOpen.setOnClickListener {

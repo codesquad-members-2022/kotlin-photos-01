@@ -2,12 +2,17 @@ package com.example.photoalbum
 
 import android.content.Context
 import android.os.Environment
-import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.DataSource
+import com.bumptech.glide.load.engine.GlideException
+import com.bumptech.glide.request.RequestListener
+import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.request.target.Target
 import com.example.photoalbum.data.AlbumRectangle
 import com.example.photoalbum.data.ImageData
 import com.example.photoalbum.model.ShowImageRepositoryRemoteImpl
@@ -15,11 +20,11 @@ import kotlinx.coroutines.launch
 import org.json.JSONArray
 import java.io.*
 
-class ShowImageViewModel: ViewModel() {
+class ShowImageViewModel : ViewModel() {
 
     private var imageList = listOf<ImageData>()
     private val _imageDataList = MutableLiveData<List<ImageData>>()
-    var imageDataList : LiveData<List<ImageData>> = _imageDataList
+    var imageDataList: LiveData<List<ImageData>> = _imageDataList
 
     init {
         _imageDataList.value = imageList
@@ -29,7 +34,7 @@ class ShowImageViewModel: ViewModel() {
 
     var gridList = MutableLiveData<List<AlbumRectangle>>()
 
-    fun initList(){
+    fun initList() {
         gridList.value = createAlbumRectangle()
     }
 
@@ -41,7 +46,7 @@ class ShowImageViewModel: ViewModel() {
         return albumRectangleList
     }
 
-    fun getImage(){
+    fun getImage() {
         viewModelScope.launch {
             val resultString = showImageRepository.downloadJson()
             imageList = jsonObjectList(resultString)
@@ -67,7 +72,7 @@ class ShowImageViewModel: ViewModel() {
         return jsonList
     }
 
-    fun updateCheck(selectedInx: Int){
+    fun updateCheck(selectedInx: Int) {
         imageList.forEach {
             it.checkBoxVisible = true
         }
@@ -76,25 +81,28 @@ class ShowImageViewModel: ViewModel() {
         _imageDataList.value = imageList
     }
 
-    fun changeCheckedState(checkedInx: Int){
+    fun changeCheckedState(checkedInx: Int) {
         imageList[checkedInx].selected = !imageList[checkedInx].selected
         _imageDataList.value = imageList
     }
 
-    fun selectImageLoad(context: Context): List<File> {
+    fun selectImageLoad(context: Context): List<File>? {
         val fileList = mutableListOf<File>()
         val manager = Glide.with(context)
-        imageList.forEach {
-            if(it.selected) {
+        return kotlin.runCatching {
+            imageList.forEach {
+                if (it.selected) {
                     val file = manager.downloadOnly().load(it.image).submit().get()
                     fileList.add(file)
+                }
             }
-        }
-        return fileList
+            return fileList
+        }.getOrNull()
     }
 
-    fun saveImage(file: File) : Boolean {
-        val downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+    fun saveImage(file: File): Boolean {
+        val downloadPath =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
         var localFile = File(downloadPath.path)
         if (!localFile.exists()) {
             localFile.mkdirs()
@@ -102,7 +110,7 @@ class ShowImageViewModel: ViewModel() {
 
         val filePath = downloadPath.path + "/" + System.currentTimeMillis() + ".jpeg"
         localFile = File(filePath)
-        try {
+        kotlin.runCatching {
             val fileInputStream = FileInputStream(file)
             val bufferedInputStream = BufferedInputStream(fileInputStream)
             val byteArrayOutputStream = ByteArrayOutputStream()
@@ -111,7 +119,7 @@ class ShowImageViewModel: ViewModel() {
 
             while (true) {
                 current = bufferedInputStream.read()
-                if(current == -1) {
+                if (current == -1) {
                     break
                 }
                 byteArrayOutputStream.write(current)
@@ -123,24 +131,12 @@ class ShowImageViewModel: ViewModel() {
             fileOutputStream.flush()
             fileOutputStream.close()
             fileInputStream.close()
-//            val mediaScannerConnectionClient = MediaScannerConnectionClient() {
-//
-//            }
 
-//            val mediaScannerConnection = MediaScannerConnection(context, mediaScannerConnectionClient)
-//            mediaScannerConnection.connect()
-//            scanMedia(context, localFile)
             return true
-        } catch (e : Exception) {
-            e.printStackTrace()
-            return false
-        }
+        }.getOrNull()
+
+        return false
     }
 
-//    private fun scanMedia(context: Context, file: File) {
-//        val intent = Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE)
-//        intent.data = Uri.fromFile(file)
-//        Log.d("SaveTest", "intent ${intent.data}")
-//        context.sendBroadcast(intent)
-//    }
 }
+
